@@ -23,7 +23,6 @@ Using the download_preprocess.py script, download the [Preprocessed ABIDE Datase
 
 ```
 python download_preprocess.py
-
 ```
 Note: The ABIDE parser script and part of download_preprocess.py  is from [Population_GCN](https://github.com/parisots/population-gcn). 
 
