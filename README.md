@@ -6,7 +6,7 @@
 
 ### 1. Install Required packeges
 Required packages  can be installed by running the following command
-```text
+```
 ```
 pip install -r requirements.txt
 ```
@@ -20,7 +20,7 @@ pip install -r requirements.txt
 ### 3. Data downloading and preprocessing
 
 Using the download_preprocess.py script, download the [Preprocessed ABIDE Dataset](http://preprocessed-connectomes-project.org/abide/)  with the following command
-```text
+```
 ```
 python download_preprocess.py
 ```
