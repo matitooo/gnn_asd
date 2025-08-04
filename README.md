@@ -4,7 +4,7 @@
 
 ## How to use 
 
-### 1. Install Required packeges
+### 1. Required Packages installation
 Required packages  can be installed by running the following command
 
 ```
