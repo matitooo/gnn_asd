@@ -1,4 +1,4 @@
-# A GNN implementation for ASD diagnosys
+# 🧠 A GNN implementation for ASD diagnosys
 
 ### <ins>Final Project for Sose25 class GNN at Potsdam Universität </ins>
 
