@@ -41,6 +41,8 @@ def matrix_preprocessing(data_folder,phenotype_file,subject_ids_file,atlas_name,
     y = label_encoder.fit_transform(labels)  # 1 = ASD, 0 = Control
     return features,y
 
+
+
 def graph_creation(data_folder,phenotype_file,subject_ids_file,atlas_name,kind):
     """
     Create adjacency matrix given a subject ID list from the ABIDE dataset. 

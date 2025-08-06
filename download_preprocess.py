@@ -13,6 +13,7 @@ pipeline = config["pipeline"]
 n_subjects = config["n_subjects"]
 atlas_name = config["atlas_name"]
 kind = config["kind"]
+root_folder = config["root_folder"]
 
 data_folder = os.path.join(root_folder, f"ABIDE_pcp/{pipeline}/filt_noglobal")
 
