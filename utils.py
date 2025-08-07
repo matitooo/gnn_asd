@@ -1,8 +1,14 @@
 import os
 import shutil
+import torch
+import yaml
+import numpy as np
+from torch_geometric.data import Data
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import f1_score
 from nilearn import datasets
 from ABIDE_utils import ABIDEParser as Reader
-import yaml
+
 
 
 def abide_download(root_folder,pipeline,n_subjects,atlas_name,kind):
@@ -80,3 +86,50 @@ def id_list_creation(root_folder,pipeline):
 
     print(f"{len(folders)-1} found!")
     return None
+
+def data_conversion(x,y,adjacency):
+    
+    #Torch conversion
+    x = torch.tensor(np.array(x), dtype=torch.float)
+    y = torch.tensor(y, dtype=torch.long)
+
+    # Adjacency matrix conversion
+    edge_index = torch.tensor(np.array(adjacency.nonzero()), dtype=torch.long)
+
+    # Data object creation
+    data = Data(x=x, edge_index=edge_index, y=y)
+
+    return data
+
+def data_split(y,test_ratio=0.2):
+    """
+    Class balanced spliting utility for balanced train/test dataset
+    """
+    indices = np.arange(len(y))
+    idx_train, idx_test = train_test_split(indices, test_size=0.2, stratify=y, random_state=42)
+    idx_train = torch.tensor(idx_train, dtype=torch.long)
+    idx_test = torch.tensor(idx_test, dtype=torch.long)
+    return idx_train,idx_test
+
+
+def evaluate(model, data, idx_eval):
+    model.eval()
+    with torch.no_grad():
+        out = model(data)
+        preds = out.argmax(dim=1)
+        # print(preds)
+        counts = torch.bincount(preds)
+        print(counts)
+        y_true = data.y[idx_eval].cpu().numpy()
+        y_pred = preds[idx_eval].cpu().numpy()
+
+    acc = (y_pred == y_true).mean()
+    f1 = f1_score(y_true, y_pred, average='weighted')
+    return acc, f1
+
+
+
+
+
+
+

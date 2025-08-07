@@ -33,13 +33,15 @@ def matrix_preprocessing(data_folder,phenotype_file,subject_ids_file,atlas_name,
     # Label encoding
     label_encoder = LabelEncoder()
     labels = []
-
+   
     for sid in subject_ids:
+        sid=int(sid)
+        subset = pheno_df.loc[pheno_df["SUB_ID"] == sid, "DX_GROUP"]
         diagnosis = pheno_df.loc[pheno_df["SUB_ID"] == sid, "DX_GROUP"].values[0]
         labels.append(diagnosis)
 
     y = label_encoder.fit_transform(labels)  # 1 = ASD, 0 = Control
-    return features,y
+    return np.array(features),y
 
 
 
@@ -106,8 +108,10 @@ def graph_creation(data_folder,phenotype_file,subject_ids_file,atlas_name,kind):
     sim_matrix = cosine_similarity(phenotype_features)
 
     # Using treshold and computing adjacency
-    threshold = 0.8
-    adjacency = (sim_matrix >= threshold).astype(int)
+    threshold = 0.7
+    adjacency = sim_matrix.copy()
+
+    adjacency[adjacency < threshold] = 0
 
     # Excluding self-loop
     np.fill_diagonal(adjacency, 0)

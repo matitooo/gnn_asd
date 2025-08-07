@@ -1,0 +1,12 @@
+method: bayes
+metric:
+  name: f_1
+  goal: maximize
+
+parameters:
+  lr:
+    values: [0.001, 0.01, 0.1]
+  hidden_size:
+    values: [64, 128, 256,512]
+  epochs:
+    values: [200,500,1000]
