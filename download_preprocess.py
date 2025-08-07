@@ -1,5 +1,5 @@
 import yaml
-from download_preprocess_utils import abide_download, id_list_creation
+from utils import abide_download, id_list_creation
 
 # Extract yaml config file
 with open("config.yaml", "r") as file:
