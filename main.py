@@ -52,7 +52,10 @@ def sweep():
         if epoch % 10 == 0:
             print(f"Epoch {epoch:03d} | Loss: {loss:.4f} | Test Acc: {acc:.4f} | Test F1: {f_1:.4f}")
 
+    wandb.log({'Accuracy':acc})
     wandb.log({'F_1 Score': f_1})
+    wandb.log({'Loss':loss})
+    
 
     # out = model(data)
     # print(out.min().item(), out.max().item(), out.mean().item())
