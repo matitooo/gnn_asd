@@ -118,8 +118,6 @@ def evaluate(model, data, idx_eval):
         out = model(data)
         preds = out.argmax(dim=1)
         # print(preds)
-        counts = torch.bincount(preds)
-        print(counts)
         y_true = data.y[idx_eval].cpu().numpy()
         y_pred = preds[idx_eval].cpu().numpy()
 
@@ -128,8 +126,5 @@ def evaluate(model, data, idx_eval):
     return acc, f1
 
 
-
-
-
-
-
+def normalize_kernel(W):
+    return (W - W.min()) / (W.max() - W.min())

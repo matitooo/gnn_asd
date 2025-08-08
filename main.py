@@ -6,14 +6,17 @@ from model_utils import train, test
 from model import ASDGCN
 from sklearn.preprocessing import StandardScaler
 import wandb
+from itertools import product
+import matplotlib.pyplot as plt
 
 def sweep():
-    wandb.init()
-    config=wandb.config
+    # wandb.init()
+    # config=wandb.config
 
-    lr=config.lr
-    hidden_size=config.hidden_size
-    n_epochs=config.epochs
+    # lr=config.lr
+    # n_epochs=config.epochs
+    lr=0.0001
+    n_epochs=200
 
     # Extract yaml config file
     with open("config.yaml", "r") as file:
@@ -31,7 +34,9 @@ def sweep():
         data_folder, phenotype_file, subject_ids, atlas_name, kind
     )
 
-    # Graph Creation
+    
+
+    #Graph Creation
     adjacency = graph_creation(data_folder, phenotype_file, subject_ids, atlas_name, kind)
 
     #Data object creation
@@ -42,23 +47,23 @@ def sweep():
     #Train/Test split
     idx_train,idx_test=data_split(y,test_ratio=0.2)
 
-    model = ASDGCN(num_features=features.shape[1], hidden_channels=hidden_size, num_classes=2)
+    model = ASDGCN(num_features=features.shape[1],num_classes=2)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr,weight_decay=0.0001)
     criterion = torch.nn.CrossEntropyLoss()
-
+    losses=[]
     for epoch in range(1, n_epochs+1):
         loss = train(model,optimizer,criterion,data,idx_train)
+        losses.append(loss)
         acc, f_1 = evaluate(model, data, idx_test)
         if epoch % 10 == 0:
             print(f"Epoch {epoch:03d} | Loss: {loss:.4f} | Test Acc: {acc:.4f} | Test F1: {f_1:.4f}")
 
-    wandb.log({'Accuracy':acc})
-    wandb.log({'F_1 Score': f_1})
-    wandb.log({'Loss':loss})
-    
-
-    # out = model(data)
-    # print(out.min().item(), out.max().item(), out.mean().item())
-
+    x_axis=[(i+1)*10 for i in range(len(losses))]
+    plt.plot(x_axis,losses)
+    plt.show()
+    # wandb.log({'Accuracy':acc})
+    # wandb.log({'F_1 Score': f_1})
+    # wandb.log({'Loss':loss})
+   
 if __name__ == "__main__":
     sweep()

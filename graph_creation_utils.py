@@ -6,6 +6,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.metrics.pairwise import cosine_similarity
+from utils import normalize_kernel
 
 
 def matrix_preprocessing(data_folder,phenotype_file,subject_ids_file,atlas_name,kind):
@@ -85,39 +86,92 @@ def graph_creation(data_folder,phenotype_file,subject_ids_file,atlas_name,kind):
     #Features array creation
     ages = []
     sexes = []
-
+    sites=[]
+    
     for sid in subject_ids:
         row = pheno_df[pheno_df["SUB_ID"] == sid].iloc[0]
         ages.append(row["AGE_AT_SCAN"])
         sexes.append(row["SEX"])  # 1 = Male, 2 = Female
+        sites.append(row["SITE_ID"])
 
     ages = np.array(ages).reshape(-1, 1)
     sexes = np.array(sexes).reshape(-1, 1)
+    sites = np.array(sites).reshape(-1, 1)
 
     # Age normalization
     scaler = StandardScaler()
-    ages_norm = scaler.fit_transform(ages)
+    ages_norm = scaler.fit_transform(ages).flatten()
 
     # Converting sex into binary values
-    sex_bin = (sexes == 1).astype(int)
+    sex_bin = (sexes == 1).astype(int).flatten()
 
-    # Combined vector creation
-    phenotype_features = np.hstack([ages_norm, sex_bin])
+    #Convert sites id to int if strings
+    unique_sites, sites_encoded = np.unique(sites, return_inverse=True)
 
-    # Similarity matrix computation
-    sim_matrix = cosine_similarity(phenotype_features)
+    #Age Gaussian Kernel (as written in paper)
+    sigma_age = 1
+    n = len(ages_norm)
+    W_age = np.zeros((n, n))
+    for i in range(n):
+        for j in range(n):
+            W_age[i, j] = np.exp(-np.abs(ages_norm[i] - ages_norm[j]) / sigma_age)
 
-    # Using treshold and computing adjacency
+    #Binary Sex kernel
+    W_sex = (sex_bin[:, None] == sex_bin[None, :]).astype(float)
+
+    #Binary Site_ID kernel
+    W_site = (sites_encoded[:, None] == sites_encoded[None, :]).astype(float).squeeze(-1)
+
+    # kernel Normalization
+    W_age_norm = normalize_kernel(W_age)
+    W_sex_norm = normalize_kernel(W_sex)
+    W_site_norm = normalize_kernel(W_site)
+
+    # Calcola norme di Frobenius
+    norm_age = np.linalg.norm(W_age_norm, ord='fro')
+    norm_sex = np.linalg.norm(W_sex_norm, ord='fro')
+    norm_site = np.linalg.norm(W_site_norm, ord='fro')
+
+    # Calcola pesi inversi
+    a = 1 / norm_age
+    b = 1 / norm_sex
+    c = 1 / norm_site
+
+    s = a + b + c
+    a /= s
+    b /= s
+    c /= s
+
+    #Kernel combination
+    W = a*W_age +b* W_sex +c* W_site
+    
+    num_nonzero = np.sum(W > 0)
+    num_edges = (num_nonzero - np.sum(np.diag(W) > 0)) // 2
+    
+    #Treshold
     threshold = 0.7
-    adjacency = sim_matrix.copy()
+    W[W < threshold] = 0
+    num_nonzero = np.sum(W > 0)
+    num_edges = (num_nonzero - np.sum(np.diag(W) > 0)) // 2
 
-    adjacency[adjacency < threshold] = 0
+    #Exclude self loop
+    np.fill_diagonal(W, 0)
 
-    # Excluding self-loop
-    np.fill_diagonal(adjacency, 0)
+    #Matrix Normalization
+    deg = np.sum(W, axis=1)
+    deg_inv_sqrt = np.zeros_like(deg)
 
-    print(f"Population graph adjacency matrix shape: {adjacency.shape}")
-    print(f"Number of edges: {adjacency.sum() // 2}")
+    #Root computing only for nodes with deg!=0
+    nonzero_mask = deg > 0
+    deg_inv_sqrt[nonzero_mask] = 1.0 / np.sqrt(deg[nonzero_mask])
+
+    D_inv_sqrt = np.diag(deg_inv_sqrt)
+
+    adjacency = D_inv_sqrt @ W @ D_inv_sqrt
+
+    # print(f"Population graph adjacency matrix shape: {adjacency.shape}")
+    num_edges_adj = (np.sum(adjacency > 0) - np.sum(np.diag(adjacency) > 0)) // 2
+    # print(f"Number of edges in the adjacency matrix: {num_edges_adj}")
 
     """
     GRAPH VISUALIZATION (OPTIONAL)
@@ -143,4 +197,5 @@ def graph_creation(data_folder,phenotype_file,subject_ids_file,atlas_name,kind):
     # plt.axis("off")
     # plt.show()
     
+    # return adjacency
     return adjacency

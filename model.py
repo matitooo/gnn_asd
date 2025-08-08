@@ -10,20 +10,15 @@ class ASDGCN(torch.nn.Module):
     are preprocessed f-mri scans.
     """
 
-    def __init__(self, num_features, hidden_channels, num_classes):
+    def __init__(self, num_features , num_classes):
         super().__init__()
-        self.conv1 = GCNConv(num_features, hidden_channels)
-        self.conv2 = GCNConv(hidden_channels, int(hidden_channels/2))
-        self.conv3 = GCNConv(int(hidden_channels/2),int(hidden_channels/4))
-        self.lin = Linear(int(hidden_channels/4), num_classes)
+        self.conv1 = GCNConv(num_features, 200)
+        self.conv2 = GCNConv(200,num_classes)
 
     def forward(self, data):
         x, edge_index = data.x, data.edge_index
         x = self.conv1(x, edge_index)
         x = F.relu(x)
+        x = F.dropout(x, p=0.3, training=self.training)  #Training dropout
         x = self.conv2(x, edge_index)
-        x = F.relu(x)
-        x = self.conv3(x, edge_index)
-        x = F.relu(x)
-        x = self.lin(x)
         return x
